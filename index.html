@@ -1,0 +1,71 @@
+<script>
+  // Gemini AI Integration Configuration
+  const GEMINI_API_KEY = 'YOUR_GEMINI_API_KEY'; // Replace with your actual key
+  const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+
+  async function getGeminiResponse(userPrompt) {
+    showTyping();
+    try {
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: userPrompt }] }]
+        })
+      });
+
+      const data = await response.json();
+      removeTyping();
+      return data.candidates[0].content.parts[0].text;
+    } catch (error) {
+      removeTyping();
+      return "I'm having trouble connecting to my AI core right now. Please check your internet or API key.";
+    }
+  }
+
+  // Chatbot Logic
+  async function sendChat() {
+    const input = document.getElementById('chat-input');
+    const message = input.value.trim();
+    if (!message) return;
+
+    // Display User Message
+    addMessage(message, 'user');
+    input.value = '';
+
+    // Get and Display AI Response
+    const aiResponse = await getGeminiResponse(message);
+    addMessage(aiResponse, 'bot');
+  }
+
+  function addMessage(text, sender) {
+    const messagesContainer = document.getElementById('chat-messages');
+    const div = document.createElement('div');
+    div.className = `msg ${sender}`;
+    div.innerHTML = `
+      <div class="msg-avatar">${sender === 'bot' ? '🌾' : '👤'}</div>
+      <div>
+        <div class="msg-bubble"><p>${text}</p></div>
+        <div class="msg-time">Just now</div>
+      </div>`;
+    messagesContainer.appendChild(div);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  }
+
+  // Initialize Charts for the Dashboard
+  document.addEventListener('DOMContentLoaded', () => {
+    const ctx = document.getElementById('yieldChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+        datasets: [{
+          label: 'Predicted Yield (Tons)',
+          data: [12, 19, 15, 25, 22, 30],
+          borderColor: '#2ECC71',
+          tension: 0.4
+        }]
+      }
+    });
+  });
+</script>
