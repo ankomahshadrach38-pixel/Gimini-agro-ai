@@ -1,0 +1,126 @@
+<div id="chat" class="panel">
+  <div class="section">
+    <div class="chat-wrap">
+      <div class="chat-header">
+        <div class="chat-header-left">
+          <div class="chat-avatar">🌾</div>
+          <div>
+            <div class="chat-name">AgroAI Advisor</div>
+            <div class="chat-status">Powered by Gemini AI</div>
+          </div>
+        </div>
+        <button class="chat-clear" onclick="clearChat()">Clear Chat</button>
+      </div>
+      <div class="chat-messages" id="chat-messages">
+        <div class="msg">
+          <div class="msg-avatar">🌾</div>
+          <div>
+            <div class="msg-bubble"><p>Hello! I'm your AI farming assistant. How can I help with your crops today?</p></div>
+          </div>
+        </div>
+      </div>
+      <div class="chat-input-row">
+        <textarea class="chat-input" id="chat-input" placeholder="Ask about soil, pests, or market trends..." rows="1"></textarea>
+        <button class="chat-send" id="chat-send" onclick="sendChat()">➤</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // 1. CONFIGURATION - Paste your key from Google AI Studio here
+  const GEMINI_API_KEY = AIzaSyBcp3Y0eBj-0HUOT14UAwDPzY95Aq0ie-I
+  const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+
+  // 2. GEMINI AI INTEGRATION
+  async function getGeminiResponse(userPrompt) {
+    showTyping();
+    try {
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ 
+            parts: [{ text: "You are an expert agricultural AI. Provide helpful farming advice: " + userPrompt }] 
+          }]
+        })
+      });
+
+      const data = await response.json();
+      removeTyping();
+      return data.candidates[0].content.parts[0].text;
+    } catch (error) {
+      removeTyping();
+      console.error("AI Error:", error);
+      return "I'm having trouble connecting to the AI. Please check your API key.";
+    }
+  }
+
+  // 3. CHATBOT INTERFACE LOGIC
+  async function sendChat() {
+    const input = document.getElementById('chat-input');
+    const sendBtn = document.getElementById('chat-send');
+    const message = input.value.trim();
+    
+    if (!message) return;
+
+    // Disable input while AI thinks
+    input.value = '';
+    input.disabled = true;
+    sendBtn.disabled = true;
+
+    addMessage(message, 'user');
+    const aiResponse = await getGeminiResponse(message);
+    addMessage(aiResponse, 'bot');
+
+    input.disabled = false;
+    sendBtn.disabled = false;
+    input.focus();
+  }
+
+  function addMessage(text, sender) {
+    const container = document.getElementById('chat-messages');
+    const div = document.createElement('div');
+    div.className = `msg ${sender}`;
+    div.innerHTML = `
+      <div class="msg-avatar">${sender === 'bot' ? '🌾' : '👤'}</div>
+      <div>
+        <div class="msg-bubble"><p>${text}</p></div>
+      </div>`;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+  }
+
+  function showTyping() {
+    const container = document.getElementById('chat-messages');
+    const div = document.createElement('div');
+    div.id = 'typing-indicator';
+    div.className = 'msg';
+    div.innerHTML = `<div class="msg-avatar">🌾</div><div class="msg-bubble">...</div>`;
+    container.appendChild(div);
+  }
+
+  function removeTyping() {
+    const indicator = document.getElementById('typing-indicator');
+    if (indicator) indicator.remove();
+  }
+
+  // 4. CHART INITIALIZATION
+  document.addEventListener('DOMContentLoaded', () => {
+    const ctx = document.getElementById('yieldChart')?.getContext('2d');
+    if (ctx) {
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May'],
+          datasets: [{
+            label: 'Predicted Yield',
+            data: [10, 25, 13, 30, 20],
+            borderColor: '#2ECC71',
+            tension: 0.3
+          }]
+        }
+      });
+    }
+  });
+</script>
